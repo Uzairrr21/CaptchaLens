@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CAPTCHA Solving &amp; Verification Tool</title>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<header>
+  <h1>CAPTCHA Solving &amp; Verification Tool</h1>
+  <p class="subtitle">Custom OCR/CV solver · Official provider test-key verification · Reporting dashboard</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="solver">1. Custom Solver</button>
+  <button class="tab-btn" data-tab="verify">2. Provider Verification</button>
+  <button class="tab-btn" data-tab="batch">3. Batch &amp; Accuracy</button>
+  <button class="tab-btn" data-tab="dashboard">4. Reporting Dashboard</button>
+  <button class="tab-btn" data-tab="dataset">5. Dataset Insights</button>
+</nav>
+
+<main>
+  <!-- TAB 1: Custom solver -->
+  <section id="solver" class="tab-panel active">
+    <h2>Synthetic CAPTCHA — Custom Solving Engine</h2>
+    <p>Generates a candidate-controlled distorted-text image with known ground truth, then runs it through the OpenCV + Tesseract OCR pipeline (with automatic fallback preprocessing on low confidence).</p>
+    <div class="row">
+      <button id="btn-generate">Generate New Captcha</button>
+      <button id="btn-solve" disabled>Solve It</button>
+    </div>
+    <div class="row">
+      <img id="captcha-img" alt="Generated captcha will appear here" />
+    </div>
+    <div id="solver-result" class="result-box"></div>
+  </section>
+
+  <!-- TAB 2: Provider verification -->
+  <section id="verify" class="tab-panel">
+    <h2>Official Provider Verification (Test Keys)</h2>
+    <p>These widgets use the <strong>official, publicly documented sandbox test keys</strong> published by each provider. Completing a widget returns a token; the backend verifies it server-side against the provider's real <code>siteverify</code> endpoint.</p>
+
+    <h3>Google reCAPTCHA v2</h3>
+    <div id="recaptcha-widget"></div>
+    <button class="verify-btn" data-provider="recaptcha">Verify reCAPTCHA Token</button>
+
+    <h3>hCaptcha</h3>
+    <div id="hcaptcha-widget"></div>
+    <button class="verify-btn" data-provider="hcaptcha">Verify hCaptcha Token</button>
+
+    <h3>Cloudflare Turnstile</h3>
+    <div id="turnstile-widget"></div>
+    <button class="verify-btn" data-provider="turnstile">Verify Turnstile Token</button>
+
+    <h3>Manual / Missing / Reused Token Tests</h3>
+    <div class="row">
+      <button id="btn-verify-missing">Submit with NO token (expect graceful failure)</button>
+      <button id="btn-verify-garbage">Submit garbage token (expect graceful failure)</button>
+    </div>
+
+    <div id="verify-result" class="result-box"></div>
+  </section>
+
+  <!-- TAB 3: Batch -->
+  <section id="batch" class="tab-panel">
+    <h2>Batch Processing &amp; Accuracy</h2>
+    <p>Generates N fresh synthetic captchas and solves them immediately, reporting aggregate accuracy.</p>
+    <div class="row">
+      <label>Count: <input type="number" id="batch-count" value="20" min="1" max="500" /></label>
+      <button id="btn-batch-run">Run Batch</button>
+    </div>
+    <div id="batch-result" class="result-box"></div>
+  </section>
+
+  <!-- TAB 4: Dashboard -->
+  <section id="dashboard" class="tab-panel">
+    <h2>Reporting Dashboard</h2>
+    <button id="btn-refresh-stats">Refresh</button>
+    <button id="btn-reset-stats" class="danger">Reset Stats</button>
+    <div id="stats-grid" class="stats-grid"></div>
+  </section>
+
+  <!-- TAB 5: Dataset insights -->
+  <section id="dataset" class="tab-panel">
+    <h2>Reference Dataset Insights</h2>
+    <p>Read-only analysis of the supplied 200-site CSV's existing labels (no requests are made to any listed website).</p>
+    <button id="btn-load-dataset">Load Distribution</button>
+    <div id="dataset-result" class="result-box"></div>
+  </section>
+</main>
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script src="https://js.hcaptcha.com/1/api.js?recaptchacompat=off" async defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
