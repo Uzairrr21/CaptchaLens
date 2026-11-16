@@ -33,6 +33,20 @@ class RecognizeResponse(BaseModel):
     detail: str
 
 
+class UploadSolveRequest(BaseModel):
+    image_base64: str
+
+
+class ContactDemoRequest(BaseModel):
+    name: str
+    email: str
+    message: str
+
+
+class AutomationUrlRequest(BaseModel):
+    url: str
+
+
 class VerifyTokenRequest(BaseModel):
     provider: str   # recaptcha | hcaptcha | turnstile
     token: Optional[str] = None

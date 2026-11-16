@@ -34,6 +34,7 @@ Built by **Uzair Moazzam**.
 - REST API with interactive Swagger documentation
 - Playwright end-to-end automation for the local application
 - Responsive frontend with animated transitions and a professional UI
+- User-selected image solving and HTML-based challenge recognition
 
 ## Technology Stack
 
@@ -139,6 +140,11 @@ Generates a controlled distorted-text CAPTCHA and sends it through the local
 OpenCV/Tesseract pipeline. The UI displays the predicted text, confidence,
 processing time, fallback usage, and success status.
 
+The same panel accepts PNG, JPEG, and WebP files from an authorized test
+fixture via `POST /api/solve-upload`. Uploaded images are processed in memory
+and are not stored. Generated challenges use `POST /api/solve/{captcha_id}` so
+their server-side ground truth can be checked.
+
 ### Provider Verification
 
 Loads official provider test widgets and sends completed tokens to the local
@@ -161,6 +167,14 @@ times, OCR confidence, estimated cost, and challenge-type distributions.
 Reads the supplied reference CSV locally and reports existing CAPTCHA labels.
 It does not contact or submit data to any listed website.
 
+### Challenge Recognition
+
+The provider panel accepts an HTML fragment from a locally hosted or
+candidate-owned test page and identifies reCAPTCHA, hCaptcha, Turnstile,
+known unsupported providers, or unknown challenges. This is inspection only:
+the application does not visit, bypass, or submit forms on unrelated
+third-party websites.
+
 ## Browser Automation Demo
 
 Install Playwright and its Chromium browser:
@@ -175,6 +189,35 @@ With the backend already running, execute from the project root:
 ```bash
 python automation/playwright_demo.py
 ```
+
+### Safe Local Contact-Form Demo
+
+The optional `automation/safe_contact_flow.py` script demonstrates the
+authorized form workflow without bypassing CAPTCHA. It only accepts
+`localhost`, fills a local test form, identifies supported CAPTCHA providers,
+and reports the challenge instead of submitting. With `--manual-captcha`, it
+opens a headed browser and resumes only after a human completes the challenge.
+
+```bash
+python automation/safe_contact_flow.py --url http://localhost:8000 --manual-captcha
+```
+
+Non-local URLs and non-local form actions are refused.
+
+The application includes a self-contained fixture at
+`http://localhost:8000/contact-demo`. It accepts `Name`, `Email`, and
+`Message`, returns a local JSON response, and never sends email or stores
+submitted data.
+
+The Provider Verification panel also includes an Authorized Contact URL
+validator. It accepts localhost by default. To test an owned or explicitly
+authorized host, add it to `AUTHORIZED_CONTACT_HOSTS` in `.env`; the validator
+then provides the manual-CAPTCHA Playwright command. CSV URLs are never
+allowlisted automatically.
+
+Provider widgets remain official integrations and require network access.
+When their scripts cannot load, the UI labels them unavailable and the local
+solver, dataset, dashboard, and recognition workflows remain usable.
 
 To watch the browser:
 
@@ -196,6 +239,7 @@ The demo:
 |---|---|---|
 | `POST` | `/api/generate` | Generate a synthetic CAPTCHA |
 | `POST` | `/api/solve/{captcha_id}` | Solve a generated CAPTCHA |
+| `POST` | `/api/solve-upload` | Solve an authorized image fixture |
 | `POST` | `/api/recognize` | Recognize a challenge type |
 | `POST` | `/api/verify` | Verify a provider token |
 | `POST` | `/api/batch-run` | Run a synthetic batch |

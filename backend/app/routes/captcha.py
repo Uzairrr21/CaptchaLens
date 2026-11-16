@@ -1,7 +1,8 @@
 import base64
+import binascii
 import time
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.captcha_generator import generate_captcha_base64, pop_ground_truth, generate_captcha
@@ -13,6 +14,7 @@ from app.schemas import (
     SolveResultResponse,
     RecognizeRequest,
     RecognizeResponse,
+    UploadSolveRequest,
     BatchRunRequest,
 )
 from app.solver.ocr_solver import OcrCvSolver
@@ -74,9 +76,27 @@ def solve(captcha_id: str, image_base64: str, db: Session = Depends(get_db)):
     endpoint is stateless w.r.t. image storage); ground truth is looked up
     server-side from the id so the client can never see/cheat the answer.
     """
+    try:
+        image_bytes = base64.b64decode(image_base64, validate=True)
+    except (ValueError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="image_base64 is not valid base64") from exc
     ground_truth = pop_ground_truth(captcha_id)
-    image_bytes = base64.b64decode(image_base64)
     return _solve_and_log(db, captcha_id, image_bytes, ground_truth)
+
+
+@router.post("/solve-upload", response_model=SolveResultResponse)
+def solve_upload(req: UploadSolveRequest, db: Session = Depends(get_db)):
+    """Solve a user-selected image without exposing or storing its contents.
+
+    Uploaded images are standalone challenges, so success means that the
+    local OCR engine produced a prediction. Generated challenges should use
+    ``/api/solve/{captcha_id}`` so their ground truth can be checked.
+    """
+    try:
+        image_bytes = base64.b64decode(req.image_base64, validate=True)
+    except (ValueError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="image_base64 is not valid base64") from exc
+    return _solve_and_log(db, "uploaded", image_bytes, None)
 
 
 @router.post("/recognize", response_model=RecognizeResponse)

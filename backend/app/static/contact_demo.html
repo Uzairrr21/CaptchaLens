@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CaptchaLens Local Contact Demo</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main>
+    <h1>Local Contact Form Demo</h1>
+    <p>This fixture is for authorized local Playwright testing. It does not send email or contact an external service.</p>
+    <form id="contact-form" action="/api/contact-demo" method="post">
+      <label for="name">Name</label>
+      <input id="name" name="name" required />
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required />
+      <label for="message">Message</label>
+      <textarea id="message" name="message" rows="6" required></textarea>
+      <button type="submit">Submit local message</button>
+    </form>
+    <pre id="result" aria-live="polite"></pre>
+  </main>
+  <script>
+    document.getElementById("contact-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const response = await fetch(form.action, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(Object.fromEntries(new FormData(form))),
+      });
+      document.getElementById("result").textContent = JSON.stringify(await response.json(), null, 2);
+    });
+  </script>
+</body>
+</html>

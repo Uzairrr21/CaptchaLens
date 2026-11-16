@@ -36,6 +36,32 @@ document.getElementById("btn-solve").addEventListener("click", async () => {
   box.textContent = JSON.stringify(data, null, 2);
 });
 
+document.getElementById("captcha-upload").addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const box = document.getElementById("solver-result");
+    box.textContent = "Solving uploaded challenge...";
+    box.className = "result-box";
+    const encoded = String(reader.result).split(",", 2)[1];
+    try {
+      const res = await fetch(`${API}/api/solve-upload`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_base64: encoded }),
+      });
+      const data = await res.json();
+      box.className = "result-box " + (res.ok && data.success ? "ok" : "fail");
+      box.textContent = JSON.stringify(data, null, 2);
+    } catch (error) {
+      box.className = "result-box fail";
+      box.textContent = `Upload solve failed: ${error}`;
+    }
+  };
+  reader.readAsDataURL(file);
+});
+
 // ---------- Tab 2: Provider Verification ----------
 let siteKeys = {};
 
@@ -43,24 +69,35 @@ async function loadSiteKeysAndRenderWidgets() {
   const res = await fetch(`${API}/api/site-keys`);
   siteKeys = await res.json();
 
-  const waitFor = (checkFn, cb, tries = 50) => {
+  const waitFor = (checkFn, cb, onUnavailable, tries = 50) => {
     if (checkFn()) return cb();
-    if (tries <= 0) return console.warn("Widget script did not load in time");
-    setTimeout(() => waitFor(checkFn, cb, tries - 1), 200);
+    if (tries <= 0) return onUnavailable();
+    setTimeout(() => waitFor(checkFn, cb, onUnavailable, tries - 1), 200);
   };
 
   waitFor(
     () => window.grecaptcha && window.grecaptcha.render,
-    () => grecaptcha.render("recaptcha-widget", { sitekey: siteKeys.recaptcha_site_key })
+    () => grecaptcha.render("recaptcha-widget", { sitekey: siteKeys.recaptcha_site_key }),
+    () => markProviderUnavailable("recaptcha")
   );
   waitFor(
     () => window.hcaptcha && window.hcaptcha.render,
-    () => hcaptcha.render("hcaptcha-widget", { sitekey: siteKeys.hcaptcha_site_key })
+    () => hcaptcha.render("hcaptcha-widget", { sitekey: siteKeys.hcaptcha_site_key }),
+    () => markProviderUnavailable("hcaptcha")
   );
   waitFor(
     () => window.turnstile && window.turnstile.render,
-    () => turnstile.render("#turnstile-widget", { sitekey: siteKeys.turnstile_site_key })
+    () => turnstile.render("#turnstile-widget", { sitekey: siteKeys.turnstile_site_key }),
+    () => markProviderUnavailable("turnstile")
   );
+}
+
+function markProviderUnavailable(provider) {
+  const widget = document.getElementById(`${provider}-widget`);
+  if (widget) {
+    widget.textContent = "Provider widget unavailable (network or firewall restriction).";
+    widget.className = "provider-unavailable";
+  }
 }
 loadSiteKeysAndRenderWidgets();
 
@@ -97,6 +134,43 @@ document.querySelectorAll(".verify-btn").forEach((btn) => {
 
 document.getElementById("btn-verify-missing").addEventListener("click", () => postVerify("recaptcha", null));
 document.getElementById("btn-verify-garbage").addEventListener("click", () => postVerify("recaptcha", "not-a-real-token"));
+
+document.getElementById("btn-authorize-url").addEventListener("click", async () => {
+  const box = document.getElementById("authorized-url-result");
+  const url = document.getElementById("authorized-url").value.trim();
+  box.textContent = "Validating...";
+  try {
+    const res = await fetch(`${API}/api/automation/authorize-url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    const data = await res.json();
+    box.className = "result-box " + (data.allowed ? "ok" : "fail");
+    box.textContent = JSON.stringify(data, null, 2);
+  } catch (error) {
+    box.className = "result-box fail";
+    box.textContent = `URL validation failed: ${error}`;
+  }
+});
+
+document.getElementById("btn-recognize").addEventListener("click", async () => {
+  const box = document.getElementById("recognize-result");
+  box.textContent = "Identifying...";
+  try {
+    const res = await fetch(`${API}/api/recognize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html_snippet: document.getElementById("recognize-html").value }),
+    });
+    const data = await res.json();
+    box.className = "result-box " + (res.ok && data.supported ? "ok" : "fail");
+    box.textContent = JSON.stringify(data, null, 2);
+  } catch (error) {
+    box.className = "result-box fail";
+    box.textContent = `Recognition failed: ${error}`;
+  }
+});
 
 // ---------- Tab 3: Batch ----------
 document.getElementById("btn-batch-run").addEventListener("click", async () => {

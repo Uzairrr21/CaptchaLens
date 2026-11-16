@@ -60,7 +60,11 @@ TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverif
 # ---------------------------------------------------------------------------
 # Custom OCR solver tuning
 OCR_CONFIDENCE_THRESHOLD = float(os.getenv("OCR_CONFIDENCE_THRESHOLD", "55"))
-TESSERACT_CMD = os.getenv("TESSERACT_CMD")  # only needed on Windows typically
+_configured_tesseract = os.getenv("TESSERACT_CMD")
+_windows_tesseract = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+TESSERACT_CMD = _configured_tesseract or (
+    str(_windows_tesseract) if _windows_tesseract.exists() else None
+)
 
 # Hypothetical third-party per-solve cost used purely for the cost-reporting
 # column in the dashboard (e.g. what a 2Captcha/Anti-Captcha style service
@@ -69,3 +73,9 @@ THIRDPARTY_COST_PER_SOLVE_USD = float(os.getenv("THIRDPARTY_COST_PER_SOLVE_USD",
 
 APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
 APP_PORT = int(os.getenv("APP_PORT", "8000"))
+
+AUTHORIZED_CONTACT_HOSTS = {
+    host.strip().lower()
+    for host in os.getenv("AUTHORIZED_CONTACT_HOSTS", "localhost,127.0.0.1,::1").split(",")
+    if host.strip()
+}

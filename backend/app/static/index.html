@@ -18,6 +18,7 @@
   <button class="tab-btn" data-tab="batch">3. Batch &amp; Accuracy</button>
   <button class="tab-btn" data-tab="dashboard">4. Reporting Dashboard</button>
   <button class="tab-btn" data-tab="dataset">5. Dataset Insights</button>
+  <button class="tab-btn" data-tab="automation">6. Authorized Automation</button>
 </nav>
 
 <main>
@@ -28,6 +29,9 @@
     <div class="row">
       <button id="btn-generate">Generate New Captcha</button>
       <button id="btn-solve" disabled>Solve It</button>
+      <label class="file-picker">Upload challenge image
+        <input type="file" id="captcha-upload" accept="image/png,image/jpeg,image/webp" />
+      </label>
     </div>
     <div class="row">
       <img id="captcha-img" alt="Generated captcha will appear here" />
@@ -59,6 +63,14 @@
     </div>
 
     <div id="verify-result" class="result-box"></div>
+
+    <h3>Challenge Recognition</h3>
+    <p>Paste a page fragment from an authorized test page to identify its CAPTCHA provider. This inspection does not visit or submit to the page.</p>
+    <textarea id="recognize-html" rows="5" placeholder="&lt;div class=&quot;g-recaptcha&quot; ...&gt;&lt;/div&gt;"></textarea>
+    <div class="row">
+      <button id="btn-recognize">Identify Challenge</button>
+    </div>
+    <div id="recognize-result" class="result-box"></div>
   </section>
 
   <!-- TAB 3: Batch -->
@@ -86,6 +98,29 @@
     <p>Read-only analysis of the supplied 200-site CSV's existing labels (no requests are made to any listed website).</p>
     <button id="btn-load-dataset">Load Distribution</button>
     <div id="dataset-result" class="result-box"></div>
+  </section>
+
+  <!-- TAB 6: Authorized automation -->
+  <section id="automation" class="tab-panel">
+    <h2>Authorized Contact Automation</h2>
+    <p>Enter a localhost or explicitly allowlisted owned-site contact URL. The tool validates authorization and provides a Playwright workflow with manual CAPTCHA completion. It does not bypass challenges or submit to unrelated websites.</p>
+    <div class="scope-card">
+      <strong>Supported project workflow</strong>
+      <ul>
+        <li>CSV websites remain read-only reference data.</li>
+        <li>CAPTCHA types are identified and reported.</li>
+        <li>Only authorized local or staging URLs can be automated.</li>
+        <li>Official provider test keys can be verified.</li>
+        <li>Real CAPTCHA challenges require manual completion or a test environment with CAPTCHA disabled.</li>
+      </ul>
+    </div>
+    <div class="row">
+      <label for="authorized-url">Contact page URL</label>
+      <input type="url" id="authorized-url" placeholder="http://localhost:8000/contact-demo" />
+      <button id="btn-authorize-url">Validate URL</button>
+    </div>
+    <div id="authorized-url-result" class="result-box"></div>
+    <p>Default local fixture: <a href="/contact-demo" target="_blank" rel="noopener">Open local contact demo</a></p>
   </section>
 </main>
 
